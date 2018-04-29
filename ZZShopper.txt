@@ -1,0 +1,8 @@
+## Title: ZZShopper
+## Description: ZZShopper version 3.0.1
+## Author: ziggr
+## APIVersion: 100022 100023
+## OptionalDependsOn: AwesomeGuildStore
+## SavedVariables: ZZShopperVars
+
+ZZShopper.lua

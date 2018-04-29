@@ -1,0 +1,119 @@
+
+Prebuilt Sparse Table
+==
+Different exports for different purposes
+- prebuild the sparse table for motif shopping
+- works well for items that you need only 1 of each of several different items
+
+
+item 		guild 1 	guild 2 	guild 3 ...
+item 1 					3000
+item 2      2000 		2500
+item 3 								4000
+...
+
+Export as a sparse Lua table.
+You only get 1 copy of each string, which is great for data dedupe of item names.
+
+["cheapest"] = {
+	["--header--"] = { nil, "guild 1", "guild 2", "guild 3", ...}
+	["item 1"] = { nil,  3000, nil, ...}
+	["item 2"] = { 2000, 2500, nil, ...}
+	["item 3"] = { nil,  nil,  4000, ...}
+	...
+}
+
+Trivial to load this into a spreadsheet and scroll around for best price.
+
+O(n item rows) set of vlookup lines to build a small table of the subset of items that you're interested in. Easy on the spreadsheet calculations.
+
+
+Ragged-right list
+==
+Different exports for different purposes
+- export ALL the prices seen for each item at each guild
+- include stack size
+- works well for material shopping when you need multiples of a few items that are hard to find at decent prices
+- possible to use when shopping for 1 of each of items that are beinng bought up before you get there, but would be hard to code for this in spreadsheet
+
+["full list"] = {
+	["item 1"] = {
+	    [(guild index) 2] = { {1, (at) 3000} }
+	}
+	["item 2"] = {
+		[(guild index) 1] = { {1, (at) 2000}, {1 (at) 2500} }
+		[(guild index) 2] = { {2, (at) 2500} }
+	}
+	["item 3"] = {
+		[(guild index) 3] = { {1, (at) 4000} }
+	}
+}
+
+For data compression, record count @ price as a string. Tab-separate multiple listings in a single guild. 3:1 commpression ratio reduces char count in SavedVariables export, 400 chars, 47 lines  char down to 164 chars, 16 lines:
+
+
+["full list"] =
+{
+	["item 1"] =
+	{
+	    [2] = "1@3000"
+	}
+	["item 2"] =
+	{
+		[1] = "1@2000\t1@2500",
+		[2] = "2@2500"
+	}
+	["item 3"] =
+	{
+		[3] = "1@4000"
+	}
+}
+
+
+["full list"] =
+{
+	["item 1"] =
+	{
+	    [2] =
+	    {
+	    	[1] =
+	    	{
+	    		[1] = 1,
+	    		[2] = 3000
+	    	}
+	    }
+	}
+	["item 2"] =
+	{
+		[1] =
+		{
+			[1] =
+			{
+				[1] = 1,
+				[2] = 2000
+			},
+			[2] = {
+				[1] = 1,
+				[2] = 2500
+			}
+		},
+		[2] =
+		{
+			{
+				[1] = 2,
+				[2] = 2500
+			}
+		}
+	}
+	["item 3"] =
+	{
+		[3] =
+		{
+			[1] =
+			{
+				[1] = 1,
+				[2] = 4000
+			}
+		}
+	}
+}
