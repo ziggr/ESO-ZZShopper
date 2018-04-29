@@ -127,16 +127,24 @@ function ZZShopper.AGS_CreateFilterClass()
         if(not self:IsDefault()) then
             return true
         end
+
+        ZZShopper.InitData()
+        ZZShopper.RememberCurrentGuild()
         return false
     end
 
     function ZZShopper_AGSFilter:ApplyFilterValues(filterArray)
         -- do nothing here as we want to filter on the result page
+        ZZShopper.RememberCurrentGuild()
     end
 
     function ZZShopper_AGSFilter:FilterPageResult(index, icon, name, quality, stackCount, sellerName, timeRemaining, purchasePrice)
         -- do stuff
-        d(name)
+        ZZShopper.RememberListing({ ["item_name"]     = name
+                                  , ["index"]    = index
+                                  , ["stack_ct"] = stackCount
+                                  , ["price"]    = purchasePrice
+                                  })
         return true
     end
 
@@ -186,6 +194,115 @@ function ZZShopper.AGS_CreateFilterClass()
     return ZZShopper_AGSFilter
 end
 
+-- Data ----------------------------------------------------------------------
+
+function ZZShopper.InitData()
+                        -- Recently inited? Don't do it again.
+    local sv          = ZZShopper.savedVariables -- for less typing
+    local now_ts_sec  = GetTimeStamp()
+    local too_old_sec = now_ts_sec - (24*60*60)
+    if sv.start_ts_sec and too_old_sec < sv.start_ts_sec then
+        return
+    end
+    ZZShopper.ResetAllData()
+end
+
+function ZZShopper.ResetAllData()
+    local sv = ZZShopper.savedVariables
+    sv.guild = {}
+    sv.guild_ct = 0
+    sv.listings = {}
+    sv.start_ts_sec = now_ts_sec
+    ZZShopper.RememberOwnGuilds()
+end
+
+function ZZShopper.RememberOwnGuilds()
+    for i = 1,5 do
+        local guild_id   = GetGuildId(i)
+        local guild_name = GetGuildName(guild_id)
+        ZZShopper.RememberGuild(guild_name, "--member--")
+    end
+end
+
+function ZZShopper.RememberGuild(guild_name, city_name)
+    local self = ZZShopper
+    self.savedVariables.guild = self.savedVariables.guild or {}
+    local guild_ct = self.savedVariables.guild_ct or 0
+    local index    = guild_ct + 1
+
+                        -- Already known? Nothing more to do.
+    if self.savedVariables.guild[guild_name] then
+        return self.savedVariables.guild[guild_name].index
+    end
+
+    self.savedVariables.guild[guild_name] = {
+          name  = guild_name
+        , city  = city_name
+        , index = index
+        }
+    self.savedVariables.guild_ct = index
+    return index
+end
+
+function ZZShopper.RememberCurrentGuild(trading_house_wrapper)
+    local _, guild_name, _ = GetCurrentTradingHouseGuildDetails()
+    local zone_index = GetCurrentMapZoneIndex()
+    local zone_name  = GetZoneNameByIndex(zone_index)
+    ZZShopper.current_guild_index = ZZShopper.RememberGuild(guild_name, zone_name)
+    ZZShopper.current_guild_name = guild_name
+end
+
+function ZZShopper.RememberListing(args)
+    if not (args.item_name and args.price) then return end
+
+    local sv = ZZShopper.savedVariables -- for less typing
+    local gi = ZZShopper.current_guild_index
+    sv.listings = sv.listings or {}
+    sv.listings[args.item_name]     = sv.listings[args.item_name]     or {}
+    sv.listings[args.item_name][gi] = sv.listings[args.item_name][gi] or ""
+
+    local item_str = tostring(args.stack_ct).."@"..tostring(args.price)
+    if sv.listings[args.item_name][gi] == "" then
+        sv.listings[args.item_name][gi] = item_str
+    else
+        sv.listings[args.item_name][gi] = sv.listings[args.item_name][gi] .. "\t" .. item_str
+    end
+end
+
+function ZZShopper.DumpStats()
+    local sv = ZZShopper.savedVariables
+    local guild_index_set = {}
+    local item_ct = 0
+    for item_name, guild_list in pairs(sv.listings or {}) do
+        for guild_index, row in pairs(guild_list) do
+            guild_index_set[guild_index] = 1
+        end
+        item_ct = item_ct + 1
+    end
+    local guild_ct = 0
+    for k,v in pairs(guild_index_set) do
+        guild_ct = guild_ct + 1
+    end
+    d(string.format("ZZShopper: guild_ct:%d  item_ct:%d", guild_ct, item_ct))
+end
+
+function ZZShopper.SlashCommand(arg1)
+    local arg = arg1:lower()
+    if arg == "reset" then
+        ZZShopper.ResetAllData()
+        d("ZZShopper: all data reset.")
+        return
+    end
+
+    if arg == "stats" then
+        ZZShopper.DumpStats()
+        return
+    end
+
+    d("/zzshopper stats : dump current listing stats")
+    d("/zzshopper reset : forget everything")
+end
+
 -- Init ----------------------------------------------------------------------
 
 function ZZShopper.OnAddOnLoaded(event, addonName)
@@ -211,3 +328,4 @@ EVENT_MANAGER:RegisterForEvent( ZZShopper.name
                               , ZZShopper.OnAddOnLoaded
                               )
 
+SLASH_COMMANDS["/zzshopper"] = ZZShopper.SlashCommand
