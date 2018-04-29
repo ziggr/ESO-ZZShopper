@@ -129,17 +129,15 @@ function ZZShopper.AGS_CreateFilterClass()
         end
 
         ZZShopper.InitData()
-        ZZShopper.RememberCurrentGuild()
         return false
     end
 
     function ZZShopper_AGSFilter:ApplyFilterValues(filterArray)
         -- do nothing here as we want to filter on the result page
-        ZZShopper.RememberCurrentGuild()
     end
 
     function ZZShopper_AGSFilter:FilterPageResult(index, icon, name, quality, stackCount, sellerName, timeRemaining, purchasePrice)
-        -- do stuff
+        ZZShopper.RememberCurrentGuild()
         ZZShopper.RememberListing({ ["item_name"]     = name
                                   , ["index"]    = index
                                   , ["stack_ct"] = stackCount
@@ -200,11 +198,16 @@ function ZZShopper.InitData()
                         -- Recently inited? Don't do it again.
     local sv          = ZZShopper.savedVariables -- for less typing
     local now_ts_sec  = GetTimeStamp()
-    local too_old_sec = now_ts_sec - (24*60*60)
+    local HOURS       = 3600
+    local too_old_sec = now_ts_sec - 2*HOURS
     if sv.start_ts_sec and too_old_sec < sv.start_ts_sec then
         return
     end
+
+d("About to reset. start:"..tostring(sv.start_ts_sec).." too_old:"..tostring(too_old_sec))
+    sv.start_ts_sec = now_ts_sec
     ZZShopper.ResetAllData()
+d("Reset. new start:"..tostring(sv.start_ts_sec))
 end
 
 function ZZShopper.ResetAllData()
@@ -212,7 +215,6 @@ function ZZShopper.ResetAllData()
     sv.guild = {}
     sv.guild_ct = 0
     sv.listings = {}
-    sv.start_ts_sec = now_ts_sec
     ZZShopper.RememberOwnGuilds()
 end
 
@@ -244,12 +246,11 @@ function ZZShopper.RememberGuild(guild_name, city_name)
     return index
 end
 
-function ZZShopper.RememberCurrentGuild(trading_house_wrapper)
+function ZZShopper.RememberCurrentGuild()
     local _, guild_name, _ = GetCurrentTradingHouseGuildDetails()
     local zone_index = GetCurrentMapZoneIndex()
     local zone_name  = GetZoneNameByIndex(zone_index)
     ZZShopper.current_guild_index = ZZShopper.RememberGuild(guild_name, zone_name)
-    ZZShopper.current_guild_name = guild_name
 end
 
 function ZZShopper.RememberListing(args)
