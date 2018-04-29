@@ -10,3 +10,9 @@ putall:
 get:
 	cp -f /Volumes/Elder\ Scrolls\ Online/live/SavedVariables/ZZShopper.lua data/
 
+tab:
+	lua ZZShopper_to_tab.lua
+	cat data/ZZShopper.txt | pbcopy
+	echo "# Data coped to clipboard. Paste somewhere useful."
+
+
