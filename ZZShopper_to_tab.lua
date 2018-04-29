@@ -8,10 +8,11 @@ OUT_FILE = assert(io.open(OUT_FILE_PATH, "w"))
 
 -- Scan 1: assign item index to each item
 DATA = ZZShopperVars["Default"]["@ziggr"]["Zhaksyr the Mighty"]
-GUILD = DATA["guild"]
-LISTINGS = DATA["listings"]
+GUILD_DATA  = DATA["guild"]
+LISTINGS    = DATA["listings"]
 START_TS_SEC = DATA["start_ts_sec"]
 
+GUILD         = {}
 ITEM_TO_INDEX = {}  -- name to index
 ITEM_NAME     = {}  -- index to name
 
@@ -30,7 +31,7 @@ end
 
 -- Scan 2: pull guild info into indexed table
 GUILD_MAX_INDEX = 0
-for guild_name, guild_data in pairs(GUILD) do
+for guild_name, guild_data in pairs(GUILD_DATA) do
     GUILD[guild_data.index] = guild_data
     GUILD_MAX_INDEX = math.max(GUILD_MAX_INDEX, guild_data.index)
 end

@@ -138,10 +138,10 @@ function ZZShopper.AGS_CreateFilterClass()
 
     function ZZShopper_AGSFilter:FilterPageResult(index, icon, name, quality, stackCount, sellerName, timeRemaining, purchasePrice)
         ZZShopper.RememberCurrentGuild()
-        ZZShopper.RememberListing({ ["item_name"]     = name
-                                  , ["index"]    = index
-                                  , ["stack_ct"] = stackCount
-                                  , ["price"]    = purchasePrice
+        ZZShopper.RememberListing({ ["item_name"] = name
+                                  , ["index"]     = index
+                                  , ["stack_ct"]  = stackCount
+                                  , ["price"]     = purchasePrice
                                   })
         return true
     end
@@ -199,7 +199,7 @@ function ZZShopper.InitData()
     local sv          = ZZShopper.savedVariables -- for less typing
     local now_ts_sec  = GetTimeStamp()
     local HOURS       = 3600
-    local too_old_sec = now_ts_sec - 2*HOURS
+    local too_old_sec = now_ts_sec - 6*HOURS
     if sv.start_ts_sec and too_old_sec < sv.start_ts_sec then
         return
     end
