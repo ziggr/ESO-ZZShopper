@@ -16,17 +16,34 @@ GUILD         = {}
 ITEM_TO_INDEX = {}  -- name to index
 ITEM_NAME     = {}  -- index to name
 
+
+-- optional data filter
+function IsInteresting(item_name)
+    local interesting = { "Scalecaller"
+                        -- , "Bloodforge Helmets"
+                        -- , "Ebonshadow Swords"
+                        }
+    for _,i in ipairs(interesting) do
+        if string.find(item_name, i) then return true end
+    end
+    return false
+end
+
                     -- flatten and sort list of names
 for item_name, guild_list in pairs(LISTINGS) do
-    if not ITEM_TO_INDEX[item_name] then
-        table.insert(ITEM_NAME, item_name)
-        ITEM_TO_INDEX[item_name] = 0
+    if IsInteresting(item_name) then
+        if not ITEM_TO_INDEX[item_name] then
+            table.insert(ITEM_NAME, item_name)
+            ITEM_TO_INDEX[item_name] = 0
+        end
     end
 end
 table.sort(ITEM_NAME)
                     -- replace placeholder "0" with real indices
 for index, item_name in ipairs(ITEM_NAME) do
-    ITEM_TO_INDEX[item_name] = index
+    if ITEM_TO_INDEX[item_name] then
+        ITEM_TO_INDEX[item_name] = index
+    end
 end
 
 -- Scan 2: pull guild info into indexed table
@@ -163,19 +180,32 @@ function OutputRows()
     local row_index = 0
     for item_name, guild_list in pairs(LISTINGS) do
         local item_index = ITEM_TO_INDEX[item_name]
-        for guild_index, listings_string in pairs(guild_list) do
-            local guild_index = guild_index
-            local listings = ToListings(listings_string)
-            for _, listing in ipairs(listings) do
-                row_index = row_index + 1
-                OutputRow( row_index
-                         , item_index
-                         , guild_index
-                         , listing.item_ct
-                         , listing.price
-                         )
+        if item_index then
+            for guild_index, listings_string in pairs(guild_list) do
+                local guild_index = guild_index
+                local listings = ToListings(listings_string)
+                for _, listing in ipairs(listings) do
+                    row_index = row_index + 1
+                    OutputRow( row_index
+                             , item_index
+                             , guild_index
+                             , listing.item_ct
+                             , listing.price
+                             )
+                end
             end
         end
+    end
+
+                        -- If we have more guilds than items, keep going.
+    max_row_index = math.max(row_index, #GUILD_DATA)
+    for ri = row_index+1, max_row_index do
+        OutputRow( row_index
+                 , nil
+                 , nil
+                 , nil
+                 , nil
+                 )
     end
 end
 
